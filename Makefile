@@ -18,7 +18,7 @@ $(GIT_HOOKS):
 
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
-	$(RM) client out
+	$(RM) client out timeRecord runtimeclient.png
 load:
 	sudo insmod $(TARGET_MODULE).ko
 unload:
@@ -38,3 +38,6 @@ check: all
 	sudo ./client > out
 	$(MAKE) unload
 	@diff -u out expected.txt && $(call pass)
+
+plot: time.txt
+	gnuplot showtime.gp
