@@ -32,7 +32,7 @@ int main()
     int offset = 100;  // TODO: test something bigger than the limit
     int i = 0;
 
-    FILE *fp = fopen("time.txt", "w");
+    FILE *fp = fopen("time.txt", "wb+");
     fd = open(FIB_DEV, O_RDWR);
 
     if (fd < 0) {

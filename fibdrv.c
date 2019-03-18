@@ -26,31 +26,63 @@ static struct cdev *fib_cdev;
 static struct class *fib_class;
 static DEFINE_MUTEX(fib_mutex);
 
-static long long fib_sequence(long long k)
+static unsigned long long fib_sequence(unsigned long long k)
 {
     /* FIXME: use clz/ctz and fast algorithms to speed up */
     if (k == 0)
         return 0;
-    long long fn = 1;
-    long long fn1 = 1;
-    long long f2n = 1;
-    long long f2n1 = 0;
-    long long i = 1;
-    while (i < k) {
-        if ((i << 1) <= k) {
-            f2n1 = fn1 * fn1 + fn * fn;
-            f2n = fn * (2 * fn1 - fn);
-            fn = f2n;
-            fn1 = f2n1;
-            i = i << 1;
+
+    int n = 0;
+    unsigned long long clz = k;
+
+    if (clz <= 0x00000000FFFFFFFF) {
+        n += 32;
+        clz <<= 32;
+    }
+    if (clz <= 0x0000FFFFFFFFFFFF) {
+        n += 16;
+        clz <<= 16;
+    }
+    if (clz <= 0x00FFFFFFFFFFFFFF) {
+        n += 8;
+        clz <<= 8;
+    }
+    if (clz <= 0x0FFFFFFFFFFFFFFF) {
+        n += 4;
+        clz <<= 4;
+    }
+    if (clz <= 0x3FFFFFFFFFFFFFFF) {
+        n += 2;
+        clz <<= 2;
+    }
+    if (clz <= 0x7FFFFFFFFFFFFFFF) {
+        n += 1;
+        clz <<= 1;
+    }
+
+    k <<= n;
+    n = 64 - n;
+
+    unsigned long long fn = 0;
+    unsigned long long fn1 = 1;
+    unsigned long long f2n = 0;
+    unsigned long long f2n1 = 0;
+
+    int i;
+    for (i = 0; i < n; i++) {
+        f2n1 = fn1 * fn1 + fn * fn;
+        f2n = fn * (2 * fn1 - fn);
+        if (k & 0x8000000000000000) {
+            fn = f2n1;
+            fn1 = f2n + f2n1;
         } else {
             fn = f2n;
-            f2n = f2n1;
-            f2n1 = fn + f2n1;
-            i++;
+            fn1 = f2n1;
         }
+        k <<= 1;
     }
-    return f2n;
+
+    return fn;
 }
 
 static int fib_open(struct inode *inode, struct file *file)
