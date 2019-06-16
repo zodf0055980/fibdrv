@@ -5,8 +5,25 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include "big.h"
 
 #define FIB_DEV "/dev/fibonacci"
+
+void big_print(bigNum buf)
+{
+    int i = part_num - 1;
+    while ((i >= 0) && (buf.part[i] == 0))
+        i--;
+    if (i < 0) {
+        printf("0");
+        return;
+    }
+    printf("%lld", buf.part[i--]);
+    while (i >= 0) {
+        printf("%010lld", buf.part[i]);
+        i--;
+    }
+}
 
 static int diff_in_ns(struct timespec t1, struct timespec t2)
 {

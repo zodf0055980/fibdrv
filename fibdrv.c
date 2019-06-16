@@ -8,6 +8,7 @@
 #include <linux/mutex.h>
 #include <linux/string.h>
 #include <linux/uaccess.h>
+#include "big.h"
 
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("National Cheng Kung University, Taiwan");
@@ -25,6 +26,51 @@ static dev_t fib_dev = 0;
 static struct cdev *fib_cdev;
 static struct class *fib_class;
 static DEFINE_MUTEX(fib_mutex);
+
+void big_assign(bigNum *a, bigNum *b)
+{
+    for (int i = 0; i < part_num; i++) {
+        a->part[i] = b->part[i];
+    }
+}
+void big_add(bigNum a, bigNum b, bigNum *result)
+{
+    memset(result, 0, sizeof(bigNum));
+    long long carry = 0;
+    for (int i = 0; i < part_num; i++) {
+        long long tmp = carry + a.part[i] + b.part[i];
+        result->part[i] = tmp % BASE;
+        carry = tmp / BASE;
+    }
+}
+
+void big_sub(bigNum a, bigNum b, bigNum *result)
+{
+    memset(result, 0, sizeof(bigNum));
+    for (int i = 0; i < part_num; i++) {
+        result->part[i] = a.part[i] - b.part[i];
+        if (result->part[i] < 0) {
+            result->part[i] += BASE;
+            result->part[i + 1]--;
+        }
+    }
+}
+
+void big_mul(bigNum a, bigNum b, bigNum *result)
+{
+    memset(result, 0, sizeof(bigNum));
+    for (int i = 0; i < part_num; i++) {
+        result->part[i] = 0;
+    }
+    for (int i = 0; i < part_num; i++) {
+        long long carry = 0;
+        for (int j = 0; i + j < part_num; j++) {
+            long long tmp = a.part[i] * b.part[j] + carry + result->part[i + j];
+            result->part[i + j] = tmp % BASE;
+            carry = tmp / BASE;
+        }
+    }
+}
 
 static unsigned long long fib_sequence(unsigned long long k)
 {
