@@ -6,6 +6,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
+#include <linux/slab.h>
 #include <linux/string.h>
 #include <linux/uaccess.h>
 #include "big.h"
@@ -135,6 +136,65 @@ static unsigned long long fib_sequence_fd_clz(unsigned long long k,
     return 0;
 }
 
+static unsigned long long fib_sequence_fd(long long n,
+                                          bigNum *result)  // Fast doubling
+{
+    if (n == 0)
+        return 0;
+    bigNum t[7];  // 0:F(n) 1:F(n + 1) 2: F(2n) 3:F(2n+1) 4:tmp 5:tmp 6:2
+    for (int i = 0; i < 7; i++) {
+        memset(&t[i], 0, sizeof(bigNum));
+    }
+    t[0].part[0] = t[1].part[0] = t[2].part[0] = 1;
+    t[6].part[0] = 2;
+    int i = 1;
+    while (i < n) {
+        if ((i << 1) <= n) {
+            big_mul(t[1], t[1], &t[4]);  // t4 = t1 * t1 + t0 * t0;
+            big_mul(t[0], t[0], &t[5]);
+            big_add(t[4], t[5], &t[3]);
+
+            big_mul(t[6], t[1], &t[5]);  // t3 = t0 * (2 * t1 - t0);
+            big_sub(t[5], t[0], &t[4]);
+            big_mul(t[0], t[4], &t[2]);
+            big_assign(&t[0], &t[2]);  // t0 = t3
+            big_assign(&t[1], &t[3]);  // t1 = t4
+            i = i << 1;
+        } else {
+            big_assign(&t[0], &t[2]);    // t0 = t3
+            big_assign(&t[2], &t[3]);    // t3 = t4
+            big_add(t[0], t[3], &t[4]);  // t4 = t0 + t4;
+            big_assign(&t[3], &t[4]);
+            i++;
+        }
+    }
+    big_assign(result, &t[2]);
+    return 0;
+}
+
+static unsigned long long fib_sequence(long long k, bigNum *result)
+{
+    if (k == 0) {
+        memset(result, 0, sizeof(bigNum));
+        return 0;
+    }
+    bigNum *f0, *f1, *tmp;
+    f0 = kmalloc(sizeof(struct bigNum), GFP_KERNEL);
+    f1 = kmalloc(sizeof(struct bigNum), GFP_KERNEL);
+    memset(f0, 0, sizeof(bigNum));
+    memset(f1, 0, sizeof(bigNum));
+    f1->part[0] = 1;
+    for (int i = 2; i <= k; i++) {
+        big_add(*f0, *f1, f0);
+        tmp = f0;
+        f0 = f1;
+        f1 = tmp;
+    }
+
+    big_assign(result, f1);
+    return 0;
+}
+
 static int fib_open(struct inode *inode, struct file *file)
 {
     if (!mutex_trylock(&fib_mutex)) {
@@ -163,7 +223,14 @@ static ssize_t fib_read(struct file *file,
     result.time = 0;
 
     ktime_t start = ktime_get();
+
+#if (mode == 0)
+    fib_sequence(*offset, &result);
+#elif (mode == 1)
+    fib_sequence_fd(*offset, &result);
+#else
     fib_sequence_fd_clz(*offset, &result);
+#endif
     ktime_t end = ktime_get();
     ktime_t runtime = ktime_sub(end, start);
 
