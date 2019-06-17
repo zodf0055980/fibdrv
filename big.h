@@ -3,7 +3,8 @@
 #define bits_per_part 8
 #define part_num 14
 
-#define mode 0  // 0 = fib_sequence 1 = Fast doubling 2 = Fast doubling with clz
+#define mode 2
+// 0 = fib_sequence, 1 = Fast doubling, 2 = Fast doubling with clz
 
 typedef struct bigNum {
     long long part[part_num];

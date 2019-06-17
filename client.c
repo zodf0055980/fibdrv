@@ -25,6 +25,21 @@ void big_print(bigNum buf)
     }
 }
 
+int getmiddle(int timearray[])
+{
+    int temp;
+    int i, j;
+    for (i = 0; i < 5 - 1; i++)
+        for (j = 0; j < 5 - 1 - i; j++) {
+            if (timearray[j] > timearray[j + 1]) {
+                temp = timearray[j];
+                timearray[j] = timearray[j + 1];
+                timearray[j + 1] = temp;
+            }
+        }
+    return timearray[2];
+}
+
 static int diff_in_ns(struct timespec t1, struct timespec t2)
 {
     struct timespec diff;
@@ -62,6 +77,8 @@ int main()
         printf("Writing to " FIB_DEV ", returned the sequence %lld\n", sz);
     }
 
+    int count = 0;
+    int gettime[5] = {0};
     for (i = 0; i <= offset; i++) {
         memset(&buf, 0, sizeof(bigNum));
         lseek(fd, i, SEEK_SET);
@@ -72,7 +89,17 @@ int main()
         clock_gettime(CLOCK_REALTIME, &end);
         //        fprintf(fp, "%d %d %d\n", i, diff_in_ns(start, end),
         //        buf.time);
-        fprintf(fp, "%d %d\n", i, buf.time);
+        // fprintf(fp, "%d %d\n", i, buf.time);
+        if (count < 4) {
+            gettime[count] = buf.time;
+            count++;
+        } else {
+            gettime[count] = buf.time;
+            count = 0;
+            int midtime = getmiddle(gettime);
+            fprintf(fp, "%d %d\n", i, midtime);
+        }
+
         printf("Reading from " FIB_DEV " at offset %d, returned the sequence ",
                i);
         big_print(buf);
