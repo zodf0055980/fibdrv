@@ -20,7 +20,7 @@ MODULE_VERSION("0.1");
 /* MAX_LENGTH is set to 92 because
  * ssize_t can't fit the number > 92
  */
-#define MAX_LENGTH 100
+#define MAX_LENGTH 500
 
 static dev_t fib_dev = 0;
 static struct cdev *fib_cdev;
@@ -160,17 +160,16 @@ static ssize_t fib_read(struct file *file,
     for (int j = 0; j < part_num; j++) {
         result.part[j] = 0;
     }
+    result.time = 0;
+
     ktime_t start = ktime_get();
     fib_sequence_fd_clz(*offset, &result);
     ktime_t end = ktime_get();
     ktime_t runtime = ktime_sub(end, start);
-    /*
-        char tmp[128];
-        memset(tmp, 0, 128);
-        sprintf(tmp, "%lld\n", runtime);
-        //    strncpy(buf,tmp,128);
-        copy_to_user(buf, tmp, 128);
-    */
+
+    result.time = runtime;
+    //    strncpy(buf,tmp,128);
+
     copy_to_user(buf, &result, size);
     return 1;
 }

@@ -38,6 +38,7 @@ check: all
 	sudo ./client > out
 	$(MAKE) unload
 	@diff -u out expected.txt && $(call pass)
+	$(MAKE) plot
 
 plot: time.txt
 	gnuplot showtime.gp

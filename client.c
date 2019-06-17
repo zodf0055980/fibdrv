@@ -46,7 +46,7 @@ int main()
 
     bigNum buf;
     char write_buf[] = "testing writing";
-    int offset = 100;  // TODO: test something bigger than the limit
+    int offset = 500;  // TODO: test something bigger than the limit
     int i = 0;
 
     FILE *fp = fopen("time.txt", "wb+");
@@ -70,8 +70,9 @@ int main()
         clock_gettime(CLOCK_REALTIME, &start);
         sz = read(fd, &buf, sizeof(bigNum));
         clock_gettime(CLOCK_REALTIME, &end);
-        fprintf(fp, "%d %d\n", i, diff_in_ns(start, end));
-
+        //        fprintf(fp, "%d %d %d\n", i, diff_in_ns(start, end),
+        //        buf.time);
+        fprintf(fp, "%d %d\n", i, buf.time);
         printf("Reading from " FIB_DEV " at offset %d, returned the sequence ",
                i);
         big_print(buf);
