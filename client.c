@@ -20,7 +20,7 @@ void big_print(bigNum buf)
     }
     printf("%lld", buf.part[i--]);
     while (i >= 0) {
-        printf("%010lld", buf.part[i]);
+        printf("%08lld", buf.part[i]);
         i--;
     }
 }
@@ -44,7 +44,7 @@ int main()
     int fd;
     long long sz;
 
-    char buf[128];
+    bigNum buf;
     char write_buf[] = "testing writing";
     int offset = 100;  // TODO: test something bigger than the limit
     int i = 0;
@@ -63,25 +63,29 @@ int main()
     }
 
     for (i = 0; i <= offset; i++) {
-        struct timespec start, end;
+        memset(&buf, 0, sizeof(bigNum));
         lseek(fd, i, SEEK_SET);
+
+        struct timespec start, end;
         clock_gettime(CLOCK_REALTIME, &start);
-        sz = read(fd, buf, 128);
+        sz = read(fd, &buf, sizeof(bigNum));
         clock_gettime(CLOCK_REALTIME, &end);
-        fprintf(fp, "%d %d %lld\n", i, diff_in_ns(start, end), atoll(buf));
-        printf("Reading from " FIB_DEV
-               " at offset %d, returned the sequence "
-               "%lld.\n",
-               i, sz);
+        fprintf(fp, "%d %d\n", i, diff_in_ns(start, end));
+
+        printf("Reading from " FIB_DEV " at offset %d, returned the sequence ",
+               i);
+        big_print(buf);
+        printf(".\n");
     }
 
     for (i = offset; i >= 0; i--) {
+        memset(&buf, 0, sizeof(bigNum));
         lseek(fd, i, SEEK_SET);
-        sz = read(fd, buf, 128);
-        printf("Reading from " FIB_DEV
-               " at offset %d, returned the sequence "
-               "%lld.\n",
-               i, sz);
+        sz = read(fd, &buf, sizeof(bigNum));
+        printf("Reading from " FIB_DEV " at offset %d, returned the sequence ",
+               i);
+        big_print(buf);
+        printf(".\n");
     }
 
     fclose(fp);
