@@ -70,6 +70,48 @@ void big_mul(bigNum a, bigNum b, bigNum *result)
     }
 }
 
+
+static void matrix_mult(long long m[2][2], long long n[2][2])
+{
+    long long m00 = m[0][0] * n[0][0] + m[0][1] * n[1][0];
+    long long m01 = m[0][0] * n[0][1] + m[0][1] * n[1][1];
+    long long m10 = m[1][0] * n[0][0] + m[1][1] * n[1][0];
+    long long m11 = m[1][0] * n[0][1] + m[1][1] * n[1][1];
+    m[0][0] = m00;
+    m[0][1] = m01;
+    m[1][0] = m10;
+    m[1][1] = m11;
+}
+
+
+static long long fib_sequence_qmatrix(long long k)  // qmatrix
+{
+    if (k == 0)
+        return 0;
+
+    long long fn[2][2] = {{1, 1}, {1, 0}};
+    long long f1[2][2] = {{1, 1}, {1, 0}};
+    int log = 100;
+    int stack[log];
+    int n = -1;
+
+    while (k > 1) {
+        if (k % 2 == 1) {
+            stack[++n] = 0;
+        }
+        stack[++n] = 1;
+        k /= 2;
+    }
+    for (int i = n; i >= 0; i--) {
+        if (!stack[i]) {
+            matrix_mult(fn, f1);
+        } else {
+            matrix_mult(fn, fn);
+        }
+    }
+    return fn[0][1];
+}
+
 static unsigned long long fib_sequence_fd_clz(unsigned long long k,
                                               bigNum *result)
 {
